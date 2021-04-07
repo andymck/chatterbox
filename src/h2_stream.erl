@@ -708,6 +708,13 @@ closed(timeout, _,
                      Stream#stream_state.response_body,
                      Stream#stream_state.response_trailers}),
     {stop, normal, Stream};
+closed(cast,
+  {send_t, Headers},
+  #stream_state{}=Stream) ->
+    {keep_state,
+     Stream#stream_state{
+       response_trailers=Headers
+      }};
 closed(_, _,
        #stream_state{}=Stream) ->
     rst_stream_(?STREAM_CLOSED, Stream);
