@@ -711,10 +711,9 @@ closed(timeout, _,
 closed(cast,
   {send_t, Headers},
   #stream_state{}=Stream) ->
-    {keep_state,
-     Stream#stream_state{
+    rst_stream_(?STREAM_CLOSED, Stream#stream_state{
        response_trailers=Headers
-      }};
+      });
 closed(_, _,
        #stream_state{}=Stream) ->
     rst_stream_(?STREAM_CLOSED, Stream);
