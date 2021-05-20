@@ -284,6 +284,7 @@ reserved_local(timeout, _,
                   callback_mod=CB
                   }=Stream) ->
     check_content_length(Stream),
+    lager:info("sending end stream whilst in state ~p", [reserved_local]),
     {ok, NewCBState} = callback(CB, on_end_stream, [], CallbackState),
     {next_state,
      reserved_local,
@@ -342,6 +343,7 @@ open(cast, recv_es,
        }=Stream) ->
     case check_content_length(Stream) of
         ok ->
+            lager:info("sending end stream whilst in state ~p", [open]),
             {ok, NewCBState} = callback(CB, on_end_stream, [], CallbackState),
             {next_state,
              half_closed_remote,
@@ -424,6 +426,7 @@ open(cast, {recv_data,
                          },
             case check_content_length(NewStream) of
                 ok ->
+                    lager:info("sending end stream whilst in state ( hit 2 ) ~p", [open]),
                     {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
                     {next_state,
                      half_closed_remote,
@@ -651,6 +654,7 @@ half_closed_local(cast,
     {ok, NewCBState} = callback(CB, on_receive_data, [Data], CallbackState),
     case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
         true ->
+            lager:info("sending end stream whilst in state ~p", [half_closed_local]),
             {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
             {next_state, closed,
              Stream#stream_state{
@@ -670,6 +674,7 @@ half_closed_local(cast, recv_es,
                      callback_state=CallbackState,
                      incoming_frames = Q
                     } = Stream) ->
+    lager:info("sending end stream whilst in state ( hit 2 ) ~p", [half_closed_local]),
     {ok, NewCBState} = callback(CB, on_end_stream, [], CallbackState),
     Data = [h2_frame_data:data(Payload) || {#frame_header{type=?DATA}, Payload} <- queue:to_list(Q)],
     {next_state, closed,
@@ -685,6 +690,7 @@ half_closed_local(cast, recv_es,
                      callback_mod=CB,
                      callback_state=CallbackState
                     } = Stream) ->
+    lager:info("sending end stream whilst in state (hit3) ~p", [half_closed_local]),
     {ok, NewCBState} = callback(CB, on_end_stream, [], CallbackState),
     {next_state, closed,
      Stream#stream_state{
