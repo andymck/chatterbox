@@ -155,10 +155,12 @@ send_connection_window_update(Size) ->
     gen_statem:cast(self(), {send_connection_window_update, Size}).
 
 rst_stream(Pid, Code) ->
+    io:format("resetting stream: ~p", [Pid]),
     gen_statem:call(Pid, {rst_stream, Code}).
 
 -spec stop(pid()) -> ok.
 stop(Pid) ->
+    io:format("stop stream: ~p", [Pid]),
     gen_statem:stop(Pid).
 
 init([
@@ -707,13 +709,15 @@ closed(timeout, _,
                      Stream#stream_state.response_headers,
                      Stream#stream_state.response_body,
                      Stream#stream_state.response_trailers}),
+    io:format("closed: stopping stream with pid ~p",[self()]),
     {stop, normal, Stream};
-closed(cast,
-  {send_t, Headers},
-  #stream_state{}=Stream) ->
-    rst_stream_(?STREAM_CLOSED, Stream#stream_state{
-       response_trailers=Headers
-      });
+%%closed(cast,
+%%  {send_t, Headers},
+%%  #stream_state{}=Stream) ->
+%%    io:format("closed: sending header as trailers for pid ~p",[self()]),
+%%    rst_stream_(?STREAM_CLOSED, Stream#stream_state{
+%%       response_trailers=Headers
+%%      });
 closed(_, _,
        #stream_state{}=Stream) ->
     rst_stream_(?STREAM_CLOSED, Stream);
