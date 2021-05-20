@@ -429,7 +429,7 @@ open(cast, {recv_data,
                     lager:info("sending end stream whilst in state ( hit 2 ) ~p", [open]),
                     {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
                     {next_state,
-                     closed,
+                     open,
                      NewStream#stream_state{
                        callback_state=NewCBState1
                       }};
