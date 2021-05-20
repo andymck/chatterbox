@@ -709,17 +709,18 @@ closed(timeout, _,
                      Stream#stream_state.response_headers,
                      Stream#stream_state.response_body,
                      Stream#stream_state.response_trailers}),
-    io:format("closed: stopping stream with pid ~p",[self()]),
+    lager:info("closed: timed out, stopping stream with pid ~p",[self()]),
     {stop, normal, Stream};
-%%closed(cast,
-%%  {send_t, Headers},
-%%  #stream_state{}=Stream) ->
-%%    io:format("closed: sending header as trailers for pid ~p",[self()]),
-%%    rst_stream_(?STREAM_CLOSED, Stream#stream_state{
-%%       response_trailers=Headers
-%%      });
+closed(cast,
+  {send_t, Headers},
+  #stream_state{}=Stream) ->
+    lager:info("closed: sending trailers then resetting stream for pid ~p",[self()]),
+    rst_stream_(?STREAM_CLOSED, Stream#stream_state{
+       response_trailers=Headers
+      });
 closed(_, _,
        #stream_state{}=Stream) ->
+    lager:info("closed: resetting stream for pid ~p",[self()]),
     rst_stream_(?STREAM_CLOSED, Stream);
 closed(Type, Event, State) ->
     handle_event(Type, Event, State).
