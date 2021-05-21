@@ -428,18 +428,18 @@ open(cast, {recv_data,
                 ok ->
                     lager:info("sending end stream whilst in state ( hit 2 ) ~p", [open]),
                     {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
-                    {next_state,
-                     open,
-                     NewStream#stream_state{
-                       callback_state=NewCBState1
-                      }};
-
-%%                    {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
 %%                    {next_state,
-%%                     half_closed_remote,
+%%                     open,
 %%                     NewStream#stream_state{
 %%                       callback_state=NewCBState1
 %%                      }};
+
+                    {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
+                    {next_state,
+                     half_closed_remote,
+                     NewStream#stream_state{
+                       callback_state=NewCBState1
+                      }};
 
                 rst_stream ->
                     {next_state,
@@ -557,11 +557,13 @@ half_closed_remote(cast,
   #stream_state{
      socket=Socket
     }=Stream) ->
+    lager:info("sending data ~p whilst in state ~p", [half_closed_remote]),
     case sock:send(Socket, h2_frame:to_binary(F)) of
         ok ->
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
                 true ->
-                    {next_state, closed, Stream, 0};
+%%                    {next_state, closed, Stream, 0};
+                      {next_state, half_closed_remote, Stream};
                 _ ->
                     {next_state, half_closed_remote, Stream}
             end;
@@ -579,6 +581,7 @@ half_closed_remote(cast,
   #stream_state{
      socket=Socket
     }=Stream) ->
+    lager:info("sending headers ~p whilst in state ~p", [half_closed_remote]),
     case sock:send(Socket, h2_frame:to_binary(F)) of
         ok ->
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
@@ -790,8 +793,10 @@ code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 
 terminate(normal, _StateName, _State) ->
+    lager:info("stream terminating with reason ~p", [normal]),
     ok;
 terminate(_Reason, _StateName, _State) ->
+    lager:info("stream terminating with reason ~p", [_Reason]),
     ok.
 
 -spec rst_stream_(error_code(), state()) ->
