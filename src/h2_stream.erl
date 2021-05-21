@@ -587,7 +587,7 @@ half_closed_remote(cast,
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
                 true ->
 %%                    {next_state, closed, Stream, 0};
-                      {next_state, half_closed_remote, Stream}
+                      {next_state, half_closed_remote, Stream};
                 _ ->
                     {next_state, half_closed_remote, Stream}
             end;
