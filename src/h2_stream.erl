@@ -376,6 +376,7 @@ open(cast, {recv_data,
                request_body_size=Stream#stream_state.request_body_size+L
               }};
         _ ->
+            lager:warning("H2: ON RECV NO-END, OPEN NOW/OPEN NEXT ", []),
             {ok, NewCBState} = callback(CB, on_receive_data, [Bin], CallbackState),
             {next_state,
              open,
@@ -413,6 +414,7 @@ open(cast, {recv_data,
             end;
 
         _ ->
+            lager:warning("H2: ON RECV END-STREAM", []), 
             {ok, NewCBState} = callback(CB, on_receive_data, [Bin], CallbackState),
 
             NewStream = Stream#stream_state{
@@ -423,12 +425,14 @@ open(cast, {recv_data,
             case check_content_length(NewStream) of
                 ok ->
                     {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
+                    lager:warning("H2: END-STREAM, NOW OPEN/NEXT HALF-CLOSED-REM", []),
                     {next_state,
                      half_closed_remote,
                      NewStream#stream_state{
                        callback_state=NewCBState1
                       }};
                 rst_stream ->
+                    lager:warning("H2: END-STREAM, NOw OPEN/NEXT CLOSED", []),
                     {next_state,
                      closed,
                      NewStream}
@@ -521,6 +525,7 @@ open(Type, Event, State) ->
 half_closed_remote(cast,
   {send_h, Headers},
   #stream_state{}=Stream) ->
+    lager:warning("H2: HALF-CLOSED REMOTE 1", []),
     {next_state,
      half_closed_remote,
      Stream#stream_state{
@@ -529,6 +534,7 @@ half_closed_remote(cast,
 half_closed_remote(cast,
   {send_t, Headers},
   #stream_state{}=Stream) ->
+    lager:warning("H2: HALF-CLOSED REMOTE 2", []),
     {keep_state,
      Stream#stream_state{
        response_trailers=Headers
@@ -544,6 +550,7 @@ half_closed_remote(cast,
   #stream_state{
      socket=Socket
     }=Stream) ->
+    lager:warning("H2: HALF-CLOSED REMOTE 3", []),
     case sock:send(Socket, h2_frame:to_binary(F)) of
         ok ->
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
@@ -566,6 +573,7 @@ half_closed_remote(cast,
   #stream_state{
      socket=Socket
     }=Stream) ->
+    lager:warning("H2: HALF-CLOSED REMOTE 4", []),
     case sock:send(Socket, h2_frame:to_binary(F)) of
         ok ->
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
@@ -595,6 +603,7 @@ half_closed_local(cast,
                   #stream_state{callback_mod=CB,
                                 callback_state=CallbackState
                                }=Stream) ->
+  lager:warning("H2: HALF-CLOSED LOCAL 1", []),
   case is_valid_headers(response, Headers) of
       ok ->
           {ok, NewCBState} = callback(CB, on_receive_headers, [Headers], CallbackState),
@@ -617,6 +626,7 @@ half_closed_local(cast,
      callback_mod=undefined,
      incoming_frames=IFQ
      } = Stream) ->
+    lager:warning("H2: HALF-CLOSED LOCAL 2", []),
     NewQ = queue:in(F, IFQ),
     case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
         true ->
@@ -650,11 +660,13 @@ half_closed_local(cast,
     case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
         true ->
             {ok, NewCBState1} = callback(CB, on_end_stream, [], NewCBState),
+            lager:warning("H2: HALF-CLOSED LOCAL, END-STREAM, NEXT CLOSED", []),
             {next_state, closed,
              Stream#stream_state{
                callback_state=NewCBState1
               }, 0};
         _ ->
+            lager:warning("H2: HALF-CLOSED LOCAL, END-STREAM, NEXT HALF-CLOSED-LOCAL", []),
             {next_state,
              half_closed_local,
              Stream#stream_state{
@@ -669,6 +681,7 @@ half_closed_local(cast, recv_es,
                      incoming_frames = Q
                     } = Stream) ->
     {ok, NewCBState} = callback(CB, on_end_stream, [], CallbackState),
+    lager:warning("H2: HALF-CLOSED LOCAL, NEXT CLOSED 1", []),
     Data = [h2_frame_data:data(Payload) || {#frame_header{type=?DATA}, Payload} <- queue:to_list(Q)],
     {next_state, closed,
      Stream#stream_state{
@@ -684,6 +697,7 @@ half_closed_local(cast, recv_es,
                      callback_state=CallbackState
                     } = Stream) ->
     {ok, NewCBState} = callback(CB, on_end_stream, [], CallbackState),
+    lager:warning("H2: HALF-CLOSED LOCAL, NEXT CLOSED 2", []),
     {next_state, closed,
      Stream#stream_state{
        incoming_frames=queue:new(),
