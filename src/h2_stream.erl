@@ -381,7 +381,6 @@ open(cast, {recv_data,
             {next_state,
              open,
              Stream#stream_state{
-               incoming_frames=queue:in(F, IFQ),
                request_body_size=Stream#stream_state.request_body_size+L,
                callback_state=NewCBState
               }}
@@ -419,7 +418,6 @@ open(cast, {recv_data,
             {ok, NewCBState} = callback(CB, on_receive_data, [Bin], CallbackState),
 
             NewStream = Stream#stream_state{
-                          incoming_frames=queue:in(F, IFQ),
                           request_body_size=Stream#stream_state.request_body_size+L,
                           request_end_stream=true,
                           callback_state=NewCBState
