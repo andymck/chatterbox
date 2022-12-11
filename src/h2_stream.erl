@@ -381,6 +381,7 @@ open(cast, {recv_data,
             {next_state,
              open,
              Stream#stream_state{
+               incoming_frames=queue:in(F, IFQ),
                request_body_size=Stream#stream_state.request_body_size+L,
                callback_state=NewCBState
               }}
@@ -418,6 +419,7 @@ open(cast, {recv_data,
             {ok, NewCBState} = callback(CB, on_receive_data, [Bin], CallbackState),
 
             NewStream = Stream#stream_state{
+                          incoming_frames=queue:in(F, IFQ),
                           request_body_size=Stream#stream_state.request_body_size+L,
                           request_end_stream=true,
                           callback_state=NewCBState
@@ -525,7 +527,7 @@ open(Type, Event, State) ->
 half_closed_remote(cast,
   {send_h, Headers},
   #stream_state{}=Stream) ->
-    lager:warning("H2: HALF-CLOSED REMOTE 1", []),
+    lager:warning("H2: HALF-CLOSED REMOTE 1; SEND_H - ~p", [Headers]),
     {next_state,
      half_closed_remote,
      Stream#stream_state{
@@ -534,7 +536,7 @@ half_closed_remote(cast,
 half_closed_remote(cast,
   {send_t, Headers},
   #stream_state{}=Stream) ->
-    lager:warning("H2: HALF-CLOSED REMOTE 2", []),
+    lager:warning("H2: HALF-CLOSED REMOTE 2; SEND_T - ~p", [HEADERS]),
     {keep_state,
      Stream#stream_state{
        response_trailers=Headers
@@ -550,7 +552,7 @@ half_closed_remote(cast,
   #stream_state{
      socket=Socket
     }=Stream) ->
-    lager:warning("H2: HALF-CLOSED REMOTE 3", []),
+    lager:warning("H2: HALF-CLOSED REMOTE 3; FLAGS ~p", [Flags]),
     case sock:send(Socket, h2_frame:to_binary(F)) of
         ok ->
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
@@ -573,7 +575,7 @@ half_closed_remote(cast,
   #stream_state{
      socket=Socket
     }=Stream) ->
-    lager:warning("H2: HALF-CLOSED REMOTE 4", []),
+    lager:warning("H2: HALF-CLOSED REMOTE 4; FLAGS ~p", [Flags]),
     case sock:send(Socket, h2_frame:to_binary(F)) of
         ok ->
             case ?IS_FLAG(Flags, ?FLAG_END_STREAM) of
