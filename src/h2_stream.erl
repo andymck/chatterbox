@@ -536,7 +536,7 @@ half_closed_remote(cast,
 half_closed_remote(cast,
   {send_t, Headers},
   #stream_state{}=Stream) ->
-    lager:warning("H2: HALF-CLOSED REMOTE 2; SEND_T - ~p", [HEADERS]),
+    lager:warning("H2: HALF-CLOSED REMOTE 2; SEND_T - ~p", [Headers]),
     {keep_state,
      Stream#stream_state{
        response_trailers=Headers
