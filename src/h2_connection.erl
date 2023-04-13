@@ -490,6 +490,8 @@ continuation(_, {frame,
                                  }
                }=Conn) ->
     route_frame(Frame, Conn);
+continuation(_, {frame, _}, Conn) ->
+    go_away(?PROTOCOL_ERROR, Conn);
 continuation(Type, Msg, State) ->
     handle_event(Type, Msg, State).
 
@@ -1325,11 +1327,12 @@ handle_event(info, {ssl_error, Socket, Reason},
                socket={ssl,Socket}
               }=Conn) ->
     handle_socket_error(Reason, Conn);
-handle_event(info, {_,R},
-           #connection{}=Conn) ->
-    handle_socket_error(R, Conn);
-handle_event(_, _, Conn) ->
-     go_away(?PROTOCOL_ERROR, Conn).
+%handle_event(info, {_,R},
+%           #connection{}=Conn) ->
+%    handle_socket_error(R, Conn);
+handle_event(Event, Msg, Conn) ->
+    error_logger:error_msg("h2_connection received unexpected event of type ~p : ~p", [Event, Msg]),
+    {keep_state, Conn}.
 
 code_change(_OldVsn, StateName, Conn, _Extra) ->
     {ok, StateName, Conn}.
