@@ -836,6 +836,8 @@ handle_event(cast, {rst_stream, ErrorCode}, State=#stream_state{}) ->
     rst_stream_(ErrorCode, State);
 handle_event(info, {'DOWN', _Ref, process, Pid, Reason}, #stream_state{connection=Pid}) ->
     {stop, Reason};
+handle_event(info, {'EXIT', Pid, Reason}, #stream_state{connection=Pid}) ->
+    {stop, Reason};
 handle_event(cast, Event, State=#stream_state{callback_mod=CB,
                                               callback_state=CallbackState}) when CB /= undefined ->
     CallbackState1 = CB:handle_info(Event, CallbackState),
